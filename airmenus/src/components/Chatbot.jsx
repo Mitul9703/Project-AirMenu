@@ -13,7 +13,26 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
     // Sample Recommended Dishes
     const recommendedDishes = MENU_ITEMS.slice(0, 2);
 
-    const handleSendMessage = (message) => {
+    // Function to call FastAPI for chatbot response
+    const sendMessageToChatbot = async (userMessage) => {
+        const apiUrl = "http://localhost:8000/chatbot/"; // FastAPI backend URL
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            const data = await response.json();
+            return data.response;
+        } catch (error) {
+            console.error("Error communicating with chatbot:", error);
+            return "Sorry, I am currently unavailable. Please try again later.";
+        }
+    };
+
+    const handleSendMessage = async (message) => {
         if (!message.trim()) return;
 
         // Append user message
@@ -24,24 +43,13 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
         // Show typing animation
         setIsTyping(true);
 
-        // Simulate bot response delay
-        setTimeout(() => {
-            let botResponse = { text: "This is a placeholder response.", sender: "bot", options: [] };
+        // Get AI response from FastAPI
+        const botReply = await sendMessageToChatbot(message);
+        
+        setIsTyping(false); // Hide typing animation before showing response
 
-            if (message.toLowerCase().includes("dishes")) {
-                botResponse = { text: "Here are some dishes you might like:", sender: "bot", showDishes: true };
-            } else if (message === "Curate") {
-                botResponse = { text: "Let’s curate a menu for you!", sender: "bot" };
-            } else if (message === "Best Dishes") {
-                botResponse = { text: "Here are our top recommendations!", sender: "bot" };
-            } else if (message === "Ask me anything") {
-                botResponse = { text: "I'm here to help! What do you want to ask?", sender: "bot" };
-            }
-
-            setIsTyping(false); // Hide typing animation before showing response
-
-            setMessages((prevMessages) => [...prevMessages, botResponse]);
-        }, 1500); // Delay for realism
+        // Append bot response
+        setMessages((prevMessages) => [...prevMessages, { text: botReply, sender: "bot" }]);
     };
 
     return (
@@ -52,7 +60,7 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 50 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }} // Smooth transition
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
                     <motion.div
                         className="bg-white w-6/7 h-6/7 rounded-lg shadow-lg p-6 flex flex-col"
@@ -101,7 +109,7 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
                                 </div>
                             )}
 
-                            {/* Display Quick Reply Buttons for Last Bot Message (Stacked Vertically) */}
+                            {/* Display Quick Reply Buttons for Last Bot Message */}
                             {messages.length > 0 &&
                                 messages[messages.length - 1].options &&
                                 messages[messages.length - 1].options.length > 0 && (
