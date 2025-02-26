@@ -13,7 +13,7 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
     // Sample Recommended Dishes
     const recommendedDishes = MENU_ITEMS.slice(0, 2);
 
-    const handleSendMessage = (message) => {
+    const handleSendMessage = async (message) => {
         if (!message.trim()) return;
 
         // Append user message
@@ -24,25 +24,42 @@ const Chatbot = ({ isOpen, onClose, onAddToCart }) => {
         // Show typing animation
         setIsTyping(true);
 
-        // Simulate bot response delay
-        setTimeout(() => {
-            let botResponse = { text: "This is a placeholder response.", sender: "bot", options: [] };
+        try {
+            // Send request to FastAPI with history
+            const response = await fetch("http://localhost:8000/query", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    question: message,
+                    history: newMessages.map((msg) => ({ question: msg.text, answer: "" }))
+                }),
+            });
 
-            if (message.toLowerCase().includes("dishes")) {
-                botResponse = { text: "Here are some dishes you might like:", sender: "bot", showDishes: true };
-            } else if (message === "Curate") {
-                botResponse = { text: "Let’s curate a menu for you!", sender: "bot" };
-            } else if (message === "Best Dishes") {
-                botResponse = { text: "Here are our top recommendations!", sender: "bot" };
-            } else if (message === "Ask me anything") {
-                botResponse = { text: "I'm here to help! What do you want to ask?", sender: "bot" };
+            if (!response.ok) {
+                throw new Error("Failed to fetch response from the chatbot API");
             }
 
-            setIsTyping(false); // Hide typing animation before showing response
+            const data = await response.json();
 
-            setMessages((prevMessages) => [...prevMessages, botResponse]);
-        }, 1500); // Delay for realism
+            // Append bot response (formatted properly)
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: data.answer.replace(/\*\*|\*/g, ""), sender: "bot" } // Remove formatting
+            ]);
+        } catch (error) {
+            console.error("Error:", error);
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: "Oops! Something went wrong. Try again later.", sender: "bot" }
+            ]);
+        }
+
+        setIsTyping(false); // Hide typing animation
     };
+
+
 
     return (
         <AnimatePresence>
