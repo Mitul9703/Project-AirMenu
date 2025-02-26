@@ -19,11 +19,7 @@ app.add_middleware(
 )
 
 
-# Hugging Face API Key (replace with your actual key)
-HUGGINGFACE_API_KEY = "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"
 
-# Mistral model hosted on Hugging Face
-MISTRAL_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
 
 GEMINI_API_KEY = "AIzaSyANmQUwXUh5nMzd_WTyXJGwAm2JORdTo8c"
 
@@ -41,57 +37,8 @@ def retrieve_relevant_chunks(query, top_k=3):
     relevant_docs = vector_db.similarity_search(query, k=top_k)
     return [doc.page_content.replace("\n", " ") for doc in relevant_docs]  # Remove newlines
 
-def query_mistral(question):
-    """Retrieves relevant chunks and queries Mistral API for an answer."""
-    relevant_chunks = retrieve_relevant_chunks(question)
-    context = " ".join(relevant_chunks)
 
-    # Enhanced prompt for better structured responses
-    prompt = f"""You are the AI-powered chatbot for DineAI, a restaurant assistant designed to enhance customer experience.
-    You have access to the restaurant's digital menu, chef recommendations, and customer reviews.
 
-    Your functionalities include:
-    - **Personalized Menu Curation**: If the user asks for recommendations, ask about their dietary preferences, flavor choices, and suggest dishes accordingly.
-    - **Chef Recommendations**: If a user asks for the best dishes, provide expert-curated suggestions from the chef.
-    - **Google Reviews Integration**: If the user asks about a dish, provide its rating, review highlights, and common feedback.
-    - **Nutritional Information**: If a user asks about a dish's nutrition, return details on calories, protein, carbs, and fat.
-    - **Allergen Warnings**: If a user mentions an allergy, ensure you only recommend dishes that are safe.
-    - **Dish Preparation Details**: If a user asks how a dish is made, provide its preparation process.
-
-    Here is the restaurant's menu:
-    {context}
-
-    Follow these rules while answering:
-    - Keep responses short and informative.
-    - If the user's question is general (e.g., "Hi", "How are you?"), reply casually.
-    - If the question is related to a specific dish, provide accurate details from the menu.
-    - If you don’t have enough context, say "I’m not sure, but I can check with the restaurant."
-
-    **User's Question:** {question}
-    **Your Response:**"""
-
-    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-    payload = {"inputs": prompt, "parameters": {"max_length": 500}}
-
-    response = requests.post(f"https://api-inference.huggingface.co/models/{MISTRAL_MODEL}", json=payload, headers=headers)
-
-    try:
-        response_json = response.json()
-        generated_text = response_json[0]["generated_text"].strip()
-
-        # Extract only the generated answer
-        if "Your Response:" in generated_text:
-            final_answer = generated_text.split("Your Response:")[-1].strip()
-        else:
-            final_answer = generated_text
-
-        return final_answer
-
-    except Exception as e:
-        return f"Error: {e}"
-
-import requests
-import json
 
 # Google Gemini API Key
 GEMINI_API_KEY = "AIzaSyANmQUwXUh5nMzd_WTyXJGwAm2JORdTo8c"
@@ -111,7 +58,7 @@ def query_gemini(question, history):
 
     Your functionalities include:
     - **Personalized Menu Curation**: Ask for dietary preferences before recommending dishes.
-    - **Chef Recommendations**: Suggest the restaurant’s best-rated dishes.
+    - **Chef Recommendations**: Suggest the restaurant's best-rated dishes.
     - **Google Reviews Integration**: Provide customer ratings and feedback on dishes.
     - **Nutritional Information**: Return dish details (calories, protein, carbs, fat).
     - **Allergen Warnings**: Recommend only safe dishes if an allergy is mentioned.
@@ -123,8 +70,48 @@ def query_gemini(question, history):
     Restaurant Menu Context:
     {context}
 
-    - If the user’s question is about food, recommend based on the menu.
-    - If unsure, say 'I don’t know, but I can check with the restaurant.'
+    IMPORTANT FUNCTION CALLING INSTRUCTIONS:
+    When recommending a specific dish to the user, you must BOTH:
+    
+    1. Provide a normal conversational response to the user
+    
+    2. AFTER your response, include a JSON function call in this exact format:
+    ```json
+    {{
+      "type": "function_call",
+      "function": "displayDishInUI",
+      "parameters": {{
+        "dish_name": "Name of the dish",
+        "price": "$XX.XX",
+        "reasoning": "Brief reason why you're recommending this dish based on user preferences",
+        "image_url": "dish_name_image"
+      }}
+    }}
+    ```
+    
+    For example, if recommending Pasta Carbonara, your complete response might be:
+
+    I'd recommend our Pasta Carbonara! It's a creamy pasta dish with pancetta, parmesan, and a rich egg-based sauce. Since you mentioned enjoying creamy pastas, this chef's specialty would be perfect for you.
+
+    ```json
+    {{
+      "type": "function_call",
+      "function": "displayDishInUI",
+      "parameters": {{
+        "dish_name": "Pasta Carbonara",
+        "price": "$16.99",
+        "reasoning": "Creamy texture with rich flavor profile matching your preference",
+        "image_url": "pasta_carbonara_image"
+      }}
+    }}
+    ```
+
+    If recommending multiple dishes, include multiple function calls, one after another.
+
+    - If the user asks general questions unrelated to specific dishes, just respond normally without the function call.
+    - Only use the function call when specifically recommending a dish the user should try.
+    - Never mention that you are using function calls in your user-facing text.
+    - Make sure to format the JSON exactly as shown, with no mistakes.
 
     **User's Question:** {question}
     **Your Response:**"""
@@ -144,15 +131,50 @@ def query_gemini(question, history):
         response_json = response.json()
         print(response_json)
         generated_text = response_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-
+        print(generated_text)
         # ✅ Remove markdown formatting (e.g., **bold text**, *italic*, etc.)
         cleaned_text = generated_text.replace("**", "").replace("*", "").replace("_", "")
-
-        return cleaned_text
+        user_response, function_data = extract_function_calls(generated_text)
+        cleaned_user_text = user_response.replace("**", "").replace("*", "").replace("_", "")
+        print(cleaned_user_text)
+        print(function_data)
+        return cleaned_user_text
 
     except Exception as e:
-        return f"Error: {e}"
+        return {
+            "user_message": f"I apologize, but I encountered an error while processing your request. Please try again.",
+            "function_data": None,
+            "error": str(e)
+        }
 
+import json
+import re
+
+def extract_function_calls(text):
+    """
+    Extracts all JSON function call blocks from the text and removes them completely,
+    returning:
+      - The pure user-facing text (with all JSON blocks removed)
+      - A list of parsed function call dictionaries
+    """
+    # --- Step 1: Extract all JSON blocks ---
+    # This regex captures any text between a "```json" marker and the subsequent "```"
+    json_blocks = re.findall(r"```json\s*({.*?})\s*```", text, re.DOTALL)
+    
+    function_calls = []
+    for block in json_blocks:
+        try:
+            # Parse each JSON block into a Python dictionary
+            function_calls.append(json.loads(block))
+        except json.JSONDecodeError as e:
+            print(f"JSON decoding error: {e}")
+            continue
+
+    # --- Step 2: Remove all JSON blocks from the text ---
+    # This regex replaces all JSON code blocks with an empty string
+    cleaned_text = re.sub(r"```json\s*{.*?}\s*```", "", text, flags=re.DOTALL).strip()
+
+    return cleaned_text, function_calls
 
 
 # Store chat history (In-Memory for now, can later move to a database)
