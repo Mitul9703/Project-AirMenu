@@ -1,0 +1,122 @@
+{
+    "MENU_ITEMS": [
+      {
+        "id": 1,
+        "name": "Truffle Mushroom Risotto",
+        "category": "Main Course",
+        "description": "Creamy Arborio rice cooked with wild mushrooms, finished with truffle oil and parmesan",
+        "price": 450,
+        "image": "https://example.com/risotto.jpg",
+        "dietary": {
+          "isVeg": true,
+          "isVegan": false,
+          "glutenFree": true
+        },
+        "nutrition": {
+          "calories": 480,
+          "protein": "12g",
+          "carbs": "65g",
+          "fat": "18g"
+        },
+        "chefSpecial": true,
+        "spicy": false,
+        "averageRating": 4.8,
+        "reviewHighlights": ["Amazing truffle flavor", "Perfectly creamy"],
+        "allergens": ["dairy", "mushrooms"],
+        "preparation": "Slow-cooked for 20 minutes with vegetable broth"
+      },
+      {
+        "id": 2,
+        "name": "Spicy Lamb Rogan Josh",
+        "category": "Main Course",
+        "description": "Traditional Kashmiri curry with tender lamb pieces in aromatic spices",
+        "price": 550,
+        "image": "https://example.com/roganjosh.jpg",
+        "dietary": {
+          "isVeg": false,
+          "isVegan": false,
+          "glutenFree": true
+        },
+        "nutrition": {
+          "calories": 620,
+          "protein": "32g",
+          "carbs": "15g",
+          "fat": "28g"
+        },
+        "chefSpecial": true,
+        "spicy": true,
+        "spiceLevel": 3,
+        "averageRating": 4.9,
+        "reviewHighlights": ["Authentic taste", "Perfectly spiced"],
+        "allergens": ["nuts"],
+        "preparation": "Slow-cooked for 3 hours with whole spices"
+      },
+      {
+        "id": 3,
+        "name": "Mediterranean Sea Bass",
+        "category": "Main Course",
+        "description": "Pan-seared sea bass with herb-infused olive oil and Mediterranean vegetables",
+        "price": 650,
+        "image": "https://example.com/seabass.jpg",
+        "dietary": {
+          "isVeg": false,
+          "isVegan": false,
+          "glutenFree": true
+        },
+        "nutrition": {
+          "calories": 420,
+          "protein": "38g",
+          "carbs": "8g",
+          "fat": "22g"
+        },
+        "chefSpecial": true,
+        "spicy": false,
+        "averageRating": 4.7,
+        "reviewHighlights": ["Fresh and light", "Perfectly cooked"],
+        "allergens": ["fish"],
+        "preparation": "Fresh catch, pan-seared with herbs"
+      },
+      {
+        "id": 4,
+        "name": "Quinoa Buddha Bowl",
+        "category": "Main Course",
+        "description": "Nutrient-rich bowl with quinoa, roasted vegetables, avocado, and tahini dressing",
+        "price": 380,
+        "image": "https://example.com/buddhabowl.jpg",
+        "dietary": {
+          "isVeg": true,
+          "isVegan": true,
+          "glutenFree": true
+        },
+        "nutrition": {
+          "calories": 380,
+          "protein": "14g",
+          "carbs": "42g",
+          "fat": "16g"
+        },
+        "chefSpecial": false,
+        "spicy": false,
+        "averageRating": 4.6,
+        "reviewHighlights": ["Healthy and filling", "Great flavors"],
+        "allergens": ["sesame"],
+        "preparation": "Fresh ingredients assembled to order"
+      }
+    ],
+    "RESTAURANT_INFO": {
+      "name": "Lafayette",
+      "cuisine": ["Modern French", "Contemporary", "International"],
+      "specialties": ["Truffle dishes", "Seafood", "Artisanal desserts"],
+      "dietaryOptions": {
+        "vegetarian": true,
+        "vegan": true,
+        "glutenFree": true
+      },
+      "popularDishes": ["Beef Wellington", "Truffle Mushroom Risotto", "Chocolate Lava Cake"],
+      "chefName": "Jean-Pierre Durant",
+      "awards": ["Michelin Star 2023", "Best Fine Dining 2022"],
+      "priceRange": "$$$$",
+      "location": "Downtown",
+      "averageRating": 4.8
+    }
+  }
+  
